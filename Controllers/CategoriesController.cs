@@ -1,5 +1,6 @@
 ﻿using ExpenseTrackerApi.Data;
 using ExpenseTrackerApi.Models;
+using ExpenseTrackerApi.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +25,7 @@ namespace ExpenseTrackerApi.Controllers
         }
 
         // GET: api/Categories/5
-        [HttpGet("{id}")]
+        [HttpGet("{id:guid}")]
         public async Task<ActionResult<Category>> GetCategory(Guid id)
         {
             var category = await _context.Categories.FindAsync(id);
@@ -39,14 +40,16 @@ namespace ExpenseTrackerApi.Controllers
 
         // PUT: api/Categories/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutCategory(Guid id, [FromForm][FromBody] Category category)
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> PutCategory(Guid id, [FromForm] CategoryDTO newCategory)
         {
-            if (id != category.Id)
+            var category = await _context.Categories.FindAsync(id);
+
+            if (id != category!.Id)
             {
                 return BadRequest();
             }
-
+            category.Name = newCategory.Name;
             _context.Entry(category).State = EntityState.Modified;
 
             try
@@ -65,22 +68,23 @@ namespace ExpenseTrackerApi.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new { status = "Updated Successfully" });
         }
 
         // POST: api/Categories
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Category>> PostCategory([FromForm][FromBody] Category category)
+        public async Task<ActionResult<Category>> PostCategory([FromForm] CategoryDTO newCategory)
         {
-            _context.Categories.Add(category);
+            var category = new Category { Name = newCategory.Name };
+            await _context.Categories.AddAsync(category);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetCategory", new { id = category.Id }, category);
         }
 
         // DELETE: api/Categories/5
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteCategory(Guid id)
         {
             var category = await _context.Categories.FindAsync(id);
@@ -92,7 +96,21 @@ namespace ExpenseTrackerApi.Controllers
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new { status = "Deleted Successfully" });
+        }
+
+        [HttpDelete()]
+        public IActionResult BulkDelete([FromQuery] Guid[] ids)
+        {
+            //var idArr = ids.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            //foreach (var id in idArr)
+            //{
+            //    var cat = await _context.Categories.FindAsync(id.Trim());
+            //    if(cat.Id==  Guid.TryParse(id.ToCharArray())) _context.Categories.Remove(cat);
+            //}
+            //await _context.SaveChangesAsync();
+
+            return Ok(new { status = "succes", ids = ids });
         }
 
         private bool CategoryExists(Guid id)

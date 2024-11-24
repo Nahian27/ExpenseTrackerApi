@@ -4,11 +4,7 @@ namespace ExpenseTrackerApi.Models.DTOs
 {
     public class CategoryDTO
     {
-        public Guid UserId { get; set; }
-
-        [StringLength(100, ErrorMessage = "Category name cannot exceed 100 characters.")]
+        [Length(3, 10)]
         public required string Name { get; set; }
-
-        // Navigation property
     }
 }

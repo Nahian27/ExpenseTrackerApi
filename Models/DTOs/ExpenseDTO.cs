@@ -8,9 +8,9 @@ namespace ExpenseTrackerApi.Models.DTOs
 
         public decimal Amount { get; set; }
 
+        [Length(3, 250)]
         public string? Description { get; set; }
 
-        [DataType(DataType.DateTime)]
         public DateTime ExpenseData { get; set; }
     }
 }
