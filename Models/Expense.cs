@@ -4,7 +4,7 @@ namespace ExpenseTrackerApi.Models
 {
     public class Expense
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; init; }
 
         public required Guid CategoryId { get; set; }
 
@@ -15,7 +15,7 @@ namespace ExpenseTrackerApi.Models
 
         public required DateTime ExpenseDate { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
         public Category? Category { get; set; }
     }

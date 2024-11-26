@@ -1,15 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ExpenseTrackerApi.Models
 {
     public class Category
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; init; }
 
-        [StringLength(10, ErrorMessage = "Category name cannot exceed 10 characters.")]
-        [Length(3, 10)]
+        [StringLength(10)]
         public required string Name { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     }
 }

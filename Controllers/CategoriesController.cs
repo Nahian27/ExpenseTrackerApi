@@ -1,4 +1,4 @@
-﻿using ExpenseTrackerApi.Data;
+using ExpenseTrackerApi.Data;
 using ExpenseTrackerApi.Models;
 using ExpenseTrackerApi.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +19,14 @@ namespace ExpenseTrackerApi.Controllers
 
         // GET: api/Categories
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
+        public async Task<ActionResult<IEnumerable<Category>>> ListCategories()
         {
             return await _context.Categories.ToListAsync();
         }
 
         // GET: api/Categories/5
         [HttpGet("{id:guid}")]
-        public async Task<ActionResult<Category>> GetCategory(Guid id)
+        public async Task<ActionResult<Category>> SingleCategory(Guid id)
         {
             var category = await _context.Categories.FindAsync(id);
 
@@ -41,7 +41,7 @@ namespace ExpenseTrackerApi.Controllers
         // PUT: api/Categories/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> PutCategory(Guid id, [FromForm] CategoryDTO newCategory)
+        public async Task<IActionResult> UpdateCategory(Guid id, [FromForm] CategoryDTO newCategory)
         {
             var category = await _context.Categories.FindAsync(id);
 
@@ -58,7 +58,7 @@ namespace ExpenseTrackerApi.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!CategoryExists(id))
+                if (!await CategoryExists(id))
                 {
                     return NotFound();
                 }
@@ -74,13 +74,13 @@ namespace ExpenseTrackerApi.Controllers
         // POST: api/Categories
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Category>> PostCategory([FromForm] CategoryDTO newCategory)
+        public async Task<ActionResult<Category>> CreateCategory([FromForm] CategoryDTO newCategory)
         {
             var category = new Category { Name = newCategory.Name };
             await _context.Categories.AddAsync(category);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetCategory", new { id = category.Id }, category);
+            return CreatedAtAction("SingleCategory", new { id = category.Id }, category);
         }
 
         // DELETE: api/Categories/5
@@ -99,23 +99,35 @@ namespace ExpenseTrackerApi.Controllers
             return Ok(new { status = "Deleted Successfully" });
         }
 
-        [HttpDelete()]
-        public IActionResult BulkDelete([FromQuery] Guid[] ids)
+        [HttpDelete]
+        public async Task<IActionResult> BulkDeleteCategories([FromQuery] string ids)
         {
-            //var idArr = ids.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            //foreach (var id in idArr)
-            //{
-            //    var cat = await _context.Categories.FindAsync(id.Trim());
-            //    if(cat.Id==  Guid.TryParse(id.ToCharArray())) _context.Categories.Remove(cat);
-            //}
-            //await _context.SaveChangesAsync();
+            // Split and parse the ids
+            var guidIds = ids.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                             .Select(id => Guid.TryParse(id, out var guid) ? guid : (Guid?)null)
+                             .Where(guid => guid.HasValue)
+                             .ToArray();
 
-            return Ok(new { status = "succes", ids = ids });
+            if (guidIds.Length == 0)
+                return BadRequest(new { message = "Invalid GUID format in ids." });
+
+            // Fetch and delete categories
+            var categories = await _context.Categories
+                                           .Where(c => guidIds.Contains(c.Id))
+                                           .ToListAsync();
+
+            if (categories.Count == 0)
+                return NotFound(new { message = "Categories not found for the provided ids." });
+
+            _context.Categories.RemoveRange(categories);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { status = "success", ids = guidIds });
         }
 
-        private bool CategoryExists(Guid id)
+        private async Task<bool> CategoryExists(Guid id)
         {
-            return _context.Categories.Any(e => e.Id == id);
+            return await _context.Categories.AnyAsync(e => e.Id == id);
         }
     }
 }
