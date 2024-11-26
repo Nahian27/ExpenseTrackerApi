@@ -45,28 +45,12 @@ namespace ExpenseTrackerApi.Controllers
         {
             var category = await _context.Categories.FindAsync(id);
 
-            if (id != category!.Id)
+            if (category == null || id != category!.Id)
             {
                 return BadRequest();
             }
             category.Name = newCategory.Name;
-            _context.Entry(category).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await CategoryExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await _context.SaveChangesAsync();
 
             return Ok(new { status = "Updated Successfully" });
         }
